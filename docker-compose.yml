@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  rack_basic_auth:
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    build:
+      context: .
+      dockerfile: Dockerfile.rack_basic_auth
+    ports:
+      - "9998:9998"
+    container_name: rack_basic_auth
+  redis:
+      image: redis
+      ports:
+        - "6380:6379" # Using port 6380 externally and the default Redis port 6379 internally
+      container_name: redis_service
+
