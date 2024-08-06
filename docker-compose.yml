@@ -11,6 +11,16 @@ services:
     ports:
       - "9998:9998"
     container_name: rack_basic_auth
+  rack_fixed_window_counter:
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    build:
+      context: .
+      dockerfile: Dockerfile.rack_fixed_window_counter
+    ports:
+      - "9997:9997"
+    container_name: fixed_window_counter
   redis:
       image: redis
       ports:
