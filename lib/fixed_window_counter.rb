@@ -8,8 +8,11 @@ require 'redis'
 class FixedWindowCounter
   attr_reader :app
 
-  def initialize(app)
+  def initialize(app, time_interval:, rate:, redis_key:)
     @app = app
+    @time_interval = time_interval
+    @rate = rate
+    @redis_key = redis_key
   end
 
   def call(env)

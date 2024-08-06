@@ -2,12 +2,12 @@ require 'rack/test'
 require 'rspec'
 require_relative '../lib/fixed_window_counter' # Adjust the path to where your FixedWindowCounter class is defined
 
-RSpec.describe FixedWindowCounter do
+RSpec.describe FixedWindowCounter do # rubocop:disable Metrics/BlockLength
   include Rack::Test::Methods
 
   let(:app) do
     Rack::Builder.new do
-      use FixedWindowCounter # , bucket_size: 2, refill_rate: 1, redis_key: 'test_rate_limit'
+      use FixedWindowCounter, time_interval: 2, rate: 1, redis_key: 'test_rate_limit'
       run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
     end.to_app
   end

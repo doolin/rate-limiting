@@ -6,7 +6,7 @@ require 'redis'
 require_relative 'fixed_window_counter'
 
 # Show a dumb way to implement basic auth in a rack application
-class BasicAuth
+class DemoApp
   def call(env)
     response_body = {
       'salutations' => 'Hello!',
@@ -25,8 +25,8 @@ end
 # without the specs being invoked.
 
 app = Rack::Builder.new do
-  use FixedWindowCounter
-  run BasicAuth.new
+  use FixedWindowCounter, time_interval: 2, rate: 1, redis_key: 'test_rate_limit'
+  run DemoApp.new
 end
 
 run app
