@@ -13,8 +13,6 @@ class TokenBucket
     @bucket_size = bucket_size
     @refill_rate = refill_rate # Tokens added per second
     @redis_key = redis_key
-    # @redis = Redis.new(port: 6380) # Connect to Dockerized Redis on localhost:6380
-    # @redis = Redis.new(host: 'redis')
     @redis = Redis.new(host: ENV.fetch('REDIS_HOST', 'localhost'), port: ENV.fetch('REDIS_PORT', 6380))
 
     initialize_bucket
