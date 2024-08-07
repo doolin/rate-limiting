@@ -22,11 +22,11 @@ class BasicAuth
   end
 
   def call(env)
-    # TODO: Refactor into function
-    auth_header = env['HTTP_AUTHORIZATION']
+    # # TODO: Refactor into function
+    # auth_header = env['HTTP_AUTHORIZATION']
 
-    # Implement actual checking per TODO below
-    username, password = userpass(auth_header)
+    # # Implement actual checking per TODO below
+    # username, password = userpass(auth_header)
 
     # TODO: Implement the Basic Auth system, returning 200 for success,
     # 401 for unauthorized.
@@ -34,10 +34,10 @@ class BasicAuth
     # [200, {"Content-Type" => "text/plain; charset=utf-8"}, ["Hello #{username}"]]
     #
     # TODO: for some reason the body is not being returned.
-    return unless authenticated?(username, password)
+    # return unless authenticated?(username, password)
 
     response_body = {
-      'salutations' => "Hello #{username}",
+      'salutations' => 'Hello!',
       'foo' => 'bar'
     }.to_json
     [200, { 'Content-Type' => 'application/json' }, [response_body]]
