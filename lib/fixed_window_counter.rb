@@ -24,12 +24,15 @@ class FixedWindowCounter
     end
   end
 
+  # TODO: define an elapsed_time method
+  # def elapsed_time
+  #   timestamp = redis.get("#{redis_key}:timestamp").to_i
+  #   current_time - timestamp
+  # end
+
   # This method checks if a request is allowed with
   # respect to a fixed window counter rate limiter.
   def allow_request?
-    # Get the current timestamp
-    # current_time = Time.now.to_i
-
     # Get the current count and timestamp from Redis
     count = redis.get("#{redis_key}:count").to_i
     timestamp = redis.get("#{redis_key}:timestamp").to_i
