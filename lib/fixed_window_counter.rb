@@ -32,6 +32,11 @@ class FixedWindowCounter
 
   # This method checks if a request is allowed with
   # respect to a fixed window counter rate limiter.
+  # This uses "on-demand reset" strategy instead of TTL
+  # or some scheduled task for resetting. This has the
+  # advantage of not having to run a scheduled task,
+  # everything is self-contained in the `allow_request?`
+  # method.
   def allow_request?
     # Get the current count and timestamp from Redis
     count = redis.get("#{redis_key}:count").to_i
@@ -50,6 +55,19 @@ class FixedWindowCounter
       redis.set("#{redis_key}:timestamp", timestamp)
       return true
     end
+
+    false
+  end
+
+  def allow_request_ttl?
+    # Try to increment the count within the time interval
+    current_count = redis.incr("#{redis_key}:count")
+
+    # If this is the first request, set the TTL to the time interval
+    redis.expire("#{redis_key}:count", time_interval) if current_count == 1
+
+    # Check if the current count is within the allowed rate
+    return true if current_count <= rate
 
     false
   end
