@@ -21,6 +21,16 @@ services:
     ports:
       - "9997:9997"
     container_name: fixed_window_counter
+  rack_sliding_window_log:
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    build:
+      context: .
+      dockerfile: Dockerfile.rack_sliding_window_log
+    ports:
+      - "9996:9996"
+    container_name: sliding_window_log
   redis:
       image: redis
       ports:
