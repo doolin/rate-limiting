@@ -14,10 +14,10 @@ COPY ./Gemfile* ./
 RUN gem install bundler && bundle install
 
 # Copy the server file
-COPY ./lib/rack_basic_auth_server.ru .
+COPY ./lib/rack_token_bucket.ru .
 COPY ./lib/token_bucket.rb .
 
 EXPOSE 9998
 
 # Command to start the server
-CMD ["rackup", "./rack_basic_auth_server.ru", "-o", "0.0.0.0", "-p", "9998"]
+CMD ["rackup", "./rack_token_bucket.ru", "-o", "0.0.0.0", "-p", "9998"]
