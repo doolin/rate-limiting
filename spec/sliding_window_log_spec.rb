@@ -1,15 +1,18 @@
 require 'rack/test'
 require 'rspec'
-require_relative '../lib/sliding_window_log' # Adjust the path to where your SlidingWindowLog class is defined
+require_relative '../lib/sliding_window_log'
 
 RSpec.describe SlidingWindowLog do # rubocop:disable Metrics/BlockLength
   include Rack::Test::Methods
 
-  # TODO: find a way to vary time_interval and rate.
+  let(:redis_key) { 'test_rate_limit' }
+
+  # Refactor the app to use `let` block, so `redis_key` can be used
   let(:app) do
+    key = redis_key
     Rack::Builder.new do
-      use SlidingWindowLog, time_interval: 1, rate: 1, redis_key: 'test_rate_limit'
-      run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
+      use(SlidingWindowLog, time_interval: 1, rate: 1, redis_key: key)
+      run ->(_env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
     end.to_app
   end
 
@@ -26,8 +29,7 @@ RSpec.describe SlidingWindowLog do # rubocop:disable Metrics/BlockLength
   let(:redis) { Redis.new(port: 6380) }
 
   before do
-    redis.del('test_rate_limit:count')
-    redis.del('test_rate_limit:timestamp')
+    redis.del(redis_key)
   end
 
   it 'allows the first request' do
@@ -41,7 +43,7 @@ RSpec.describe SlidingWindowLog do # rubocop:disable Metrics/BlockLength
     get '/'
     expect(last_response.status).to eq(200)
 
-    sleep 2
+    sleep 1
     # Second request should also pass (bucket size is 2)
     get '/'
     expect(last_response.status).to eq(200)

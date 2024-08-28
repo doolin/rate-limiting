@@ -17,23 +17,26 @@ class SlidingWindowLog
   end
 
   def call(env)
-    @app.call(env)
-
-    # if allow_request?
-    #   @app.call(env)
-    # else
-    #   [429, { 'Content-Type' => 'text/plain' }, ['Rate limit exceeded']]
-    # end
+    if allow_request?
+      app.call(env)
+    else
+      [429, { 'Content-Type' => 'text/plain' }, ['Rate limit exceeded']]
+    end
   end
 
-  # TODO: define an elapsed_time method
-  # def elapsed_time
-  #   timestamp = redis.get("#{redis_key}:timestamp").to_i
-  #   current_time - timestamp
-  # end
-
   def allow_request?
-    true
+    # remove outdated timestamps
+    min_score = current_time - time_interval
+    redis.zremrangebyscore(redis_key, 0, min_score)
+
+    # count the number of requests
+    count = redis.zcard(redis_key)
+    if count < rate
+      redis.zadd(redis_key, current_time, current_time)
+      return true
+    end
+
+    false
   end
 
   private
