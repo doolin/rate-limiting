@@ -4,10 +4,11 @@ require 'rack'
 require 'json'
 require 'base64'
 require 'redis'
-# require 'rspec/autorun' if ENV['RACK_TEST']
+
 require_relative 'token_bucket'
 
-# Show a dumb way to implement basic auth in a rack application
+# Wrapper for testing the TokenBucket class.
+# This class is not meant to be used in production.
 class DemoApp
   def userpass(auth_header)
     userpass_encoded = auth_header.sub(/^Basic\s+/, '')
@@ -15,27 +16,7 @@ class DemoApp
     userpass.split(':')
   end
 
-  def authenticated?(username, password)
-    return true if username == 'username1' && password == 'password'
-
-    false
-  end
-
   def call(env)
-    # # TODO: Refactor into function
-    # auth_header = env['HTTP_AUTHORIZATION']
-
-    # # Implement actual checking per TODO below
-    # username, password = userpass(auth_header)
-
-    # TODO: Implement the Basic Auth system, returning 200 for success,
-    # 401 for unauthorized.
-    # binding.pry
-    # [200, {"Content-Type" => "text/plain; charset=utf-8"}, ["Hello #{username}"]]
-    #
-    # TODO: for some reason the body is not being returned.
-    # return unless authenticated?(username, password)
-
     response_body = {
       'salutations' => 'Hello!',
       'foo' => 'bar'
