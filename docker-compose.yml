@@ -11,6 +11,16 @@ services:
     ports:
       - "9998:9998"
     container_name: rack_token_bucket
+  rack_leaking_bucket:
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    build:
+      context: .
+      dockerfile: Dockerfile.rack_leaking_bucket
+    ports:
+      - "9995:9995"
+    container_name: rack_leaking_bucket
   rack_fixed_window_counter:
     environment:
       - REDIS_HOST=redis

@@ -1,0 +1,23 @@
+# Use the official Ruby image
+FROM ruby:3.3.3
+
+# Install dependencies
+RUN apt-get update -qq && apt-get install -y build-essential libpq-dev nodejs
+
+# Set up working directory
+WORKDIR /app
+
+# Copy the Gemfile and Gemfile.lock into the working directory
+COPY ./Gemfile* ./
+
+# Install gems
+RUN gem install bundler && bundle install
+
+# Copy the server file
+COPY ./lib/rack_leaking_bucket.ru .
+COPY ./lib/leaking_bucket.rb .
+
+EXPOSE 9995
+
+# Command to start the server
+CMD ["rackup", "./rack_leaking_bucket.ru", "-o", "0.0.0.0", "-p", "9995"]
