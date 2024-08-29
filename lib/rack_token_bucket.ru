@@ -8,7 +8,7 @@ require 'redis'
 require_relative 'token_bucket'
 
 # Show a dumb way to implement basic auth in a rack application
-class BasicAuth
+class DemoApp
   def userpass(auth_header)
     userpass_encoded = auth_header.sub(/^Basic\s+/, '')
     userpass = Base64.decode64 userpass_encoded
@@ -54,7 +54,7 @@ end
 
 app = Rack::Builder.new do
   use TokenBucket, bucket_size: 1, refill_rate: 1, redis_key: 'new_rate_limit'
-  run BasicAuth.new
+  run DemoApp.new
 end
 
 run app
