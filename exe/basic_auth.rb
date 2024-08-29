@@ -8,7 +8,7 @@ require 'base64'
 # Client class for sending a basic auth request
 # It doesn't need to actually do anything other
 # than send the request.
-class BasicAuthClient
+class TokenBucketClient
   def initialize
     @uri = URI('http://localhost:9998')
     @http = Net::HTTP.new(@uri.host, @uri.port)
@@ -27,5 +27,5 @@ class BasicAuthClient
   end
 end
 
-client = BasicAuthClient.new
+client = TokenBucketClient.new
 client.get_request
