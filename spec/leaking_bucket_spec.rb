@@ -10,8 +10,10 @@ RSpec.describe LeakingBucket do
 
   let(:app) do
     key = redis_key
+    size = bucket_size
+    rate = leak_rate
     Rack::Builder.new do
-      use LeakingBucket, bucket_size: 10, leak_rate: 2, redis_key: key
+      use LeakingBucket, bucket_size: size, leak_rate: rate, redis_key: key
       run ->(_env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
     end.to_app
   end
@@ -97,12 +99,15 @@ RSpec.describe LeakingBucket do
   end
 
   context 'with small bucket size and leak rate' do
+    let(:leak_rate) { 2 }
+    let(:bucket_size) { 1 }
+
     it 'handles a very small bucket size correctly' do
-      key = redis_key
-      small_bucket_app = Rack::Builder.new do
-        use LeakingBucket, bucket_size: 1, leak_rate: 2, redis_key: key
-        run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
-      end.to_app
+      # key = redis_key
+      # small_bucket_app = Rack::Builder.new do
+      #   use LeakingBucket, bucket_size: 1, leak_rate: 2, redis_key: key
+      #   run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
+      # end.to_app
 
       get '/'
       expect(last_response.status).to eq(200) # First request should be allowed
@@ -113,12 +118,15 @@ RSpec.describe LeakingBucket do
   end
 
   context 'with a zero leak rate' do
+    let(:leak_rate) { 0 }
+    let(:bucket_size) { 5 }
+
     it 'handles a zero leak rate by permanently filling the bucket' do
-      key = redis_key
-      no_leak_app = Rack::Builder.new do
-        use LeakingBucket, bucket_size: 5, leak_rate: 0, redis_key: key
-        run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
-      end.to_app
+      # key = redis_key
+      # no_leak_app = Rack::Builder.new do
+      #   use LeakingBucket, bucket_size: 5, leak_rate: 0, redis_key: key
+      #   run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
+      # end.to_app
 
       5.times { get '/' }
       get '/'
