@@ -27,7 +27,7 @@ end
 # without the specs being invoked.
 
 app = Rack::Builder.new do
-  use LeakingBucket, bucket_size: 1, leak_rate: 1, redis_key:
+  use LeakingBucket, bucket_size: 1, leak_rate: 1
   run DemoApp.new
 end
 

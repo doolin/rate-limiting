@@ -10,7 +10,7 @@ require 'base64'
 # than send the request.
 class LeakingBucketClient
   def initialize
-    @uri = URI('http://localhost:9996')
+    @uri = URI('http://localhost:9995')
     @http = Net::HTTP.new(@uri.host, @uri.port)
   end
 

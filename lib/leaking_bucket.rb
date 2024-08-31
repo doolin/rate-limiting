@@ -3,41 +3,38 @@
 
 require 'redis'
 
-# This class implements a token bucket for rate limiting.
-# The "checket" part is for sanity checking.
+# This class implements a leaking bucket for rate limiting.
 class LeakingBucket
-  attr_reader :app, :bucket_size, :leak_rate, :redis, :redis_key
+  attr_reader :app, :bucket_size, :leak_rate, :redis
 
-  def initialize(app, bucket_size:, leak_rate:) # , redis_key:)
+  def initialize(app, bucket_size:, leak_rate:)
     @app = app
     @bucket_size = bucket_size
     @leak_rate = leak_rate # Leakings added per second
-    # @redis_key = redis_key
     @redis = Redis.new(host: ENV.fetch('REDIS_HOST', 'localhost'), port: ENV.fetch('REDIS_PORT', 6380))
   end
 
   def call(env)
     request = Rack::Request.new(env)
-    @redis_key = request.params['redis_key'] # || 'default_rate_limit'
+    redis_key = request.params['redis_key'] || 'default_rate_limit'
 
-    initialize_bucket unless bucket_initialized?
+    initialize_bucket(redis_key) unless bucket_initialized?(redis_key)
 
-    if allow_request?
+    if allow_request?(redis_key)
       @app.call(env)
     else
       [429, { 'Content-Type' => 'text/plain' }, ['Rate limit exceeded']]
     end
   end
 
-  def allow_request?
+  def allow_request?(redis_key)
     current_count = redis.get("#{redis_key}:request_count").to_i
     elapsed_time = current_time - redis.get("#{redis_key}:timestamp").to_f
     leaked_count = (elapsed_time * leak_rate).floor
     adjusted_count = [current_count - leaked_count, 0].max
 
     if adjusted_count < bucket_size
-      redis.set("#{redis_key}:request_count", current_count + 1)
-      redis.set("#{redis_key}:timestamp", current_time)
+      update_bucket(redis_key, adjusted_count + 1)
       true
     else
       false
@@ -46,14 +43,27 @@ class LeakingBucket
 
   private
 
-  def bucket_initialized?
-    redis.exists("#{@redis_key}:request_count") && redis.exists("#{@redis_key}:timestamp")
+  # TODO: hook this up.
+  def calculate_leaked_count(elapsed_time)
+    (elapsed_time * @leak_rate).floor
   end
 
-  def initialize_bucket
-    # Start with an empty bucket if not already set
-    @redis.setnx("#{redis_key}:request_count", 0)
-    @redis.setnx("#{redis_key}:timestamp", current_time)
+  def update_bucket(redis_key, new_count)
+    redis.multi do |r|
+      r.set("#{redis_key}:request_count", new_count)
+      r.set("#{redis_key}:timestamp", current_time)
+    end
+  end
+
+  def bucket_initialized?(redis_key)
+    redis.exists("#{redis_key}:request_count") && redis.exists("#{redis_key}:timestamp")
+  end
+
+  def initialize_bucket(redis_key)
+    redis.multi do |r|
+      r.setnx("#{redis_key}:request_count", 0)
+      r.setnx("#{redis_key}:timestamp", current_time)
+    end
   end
 
   def current_time
