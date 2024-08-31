@@ -40,8 +40,6 @@ class LeakingBucket
 
     adjusted_count = [current_count - leaked_count, 0].max
 
-    # binding.irb if current_count == 5
-
     if adjusted_count < bucket_size
       redis.set("#{redis_key}:request_count", current_count + 1)
       redis.set("#{redis_key}:timestamp", current_time)

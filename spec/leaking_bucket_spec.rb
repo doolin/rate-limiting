@@ -40,7 +40,7 @@ RSpec.describe LeakingBucket do
 
     it 'allows requests within the capacity of the bucket' do
       10.times do
-        get '/'
+        get '/', { redis_key: }
         expect(last_response.status).to eq(200)
       end
     end
@@ -84,18 +84,11 @@ RSpec.describe LeakingBucket do
       client1_key = 'client1'
       client2_key = 'client2'
 
-      # Rack::Builder.new do
-      #   use LeakingBucket, bucket_size: 10, leak_rate: 2, redis_key: client1_key
-      #   run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
-      # end.to_app
-
-      key = client1_key
-      10.times { get '/', { redis_key: client1_key }, 'HTTP_CLIENT_ID' => client1_key }
-      get '/', { redis_key: client1_key }, 'HTTP_CLIENT_ID' => client1_key
+      10.times { get '/', { redis_key: client1_key } }
+      get '/', { redis_key: client1_key }
       expect(last_response.status).to eq(429) # Client 1 should be rate-limited
 
-      key = client2_key
-      get '/', { redis_key: client2_key }, 'HTTP_CLIENT_ID' => client2_key
+      get '/', { redis_key: client2_key }
       expect(last_response.status).to eq(200) # Client 2 should not be rate-limited
     end
   end
