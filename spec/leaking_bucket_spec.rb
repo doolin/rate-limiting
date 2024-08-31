@@ -1,7 +1,7 @@
 require 'rack/test'
 require 'rspec'
 require 'redis'
-require_relative '../lib/leaking_bucket' # Adjust the path to where your LeakingBucket class is defined
+require_relative '../lib/leaking_bucket'
 
 RSpec.describe LeakingBucket do
   include Rack::Test::Methods
@@ -9,11 +9,11 @@ RSpec.describe LeakingBucket do
   let(:redis_key) { 'test_rate_limit' }
 
   let(:app) do
-    key = redis_key
     size = bucket_size
     rate = leak_rate
+
     Rack::Builder.new do
-      use LeakingBucket, bucket_size: size, leak_rate: rate, redis_key: key
+      use LeakingBucket, bucket_size: size, leak_rate: rate
       run ->(_env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
     end.to_app
   end
@@ -55,6 +55,7 @@ RSpec.describe LeakingBucket do
     it 'allows new requests after some time has passed and the bucket leaks' do
       10.times { get '/', { redis_key: } }
       sleep(3) # Assuming a leaking rate of 2 requests per second
+
       get '/', { redis_key: }
       expect(last_response.status).to eq(200)
     end
@@ -71,12 +72,12 @@ RSpec.describe LeakingBucket do
     end
 
     it 'resets correctly after the bucket overflows and time passes' do
-      10.times { get '/' }
-      get '/'
+      10.times { get '/', { redis_key: } }
+      get '/', { redis_key: }
       expect(last_response.status).to eq(429) # Bucket should be full here
 
       sleep(3) # Enough time for the bucket to leak
-      get '/'
+      get '/', { redis_key: }
       expect(last_response.status).to eq(200) # Bucket should have capacity now
     end
 
@@ -111,9 +112,9 @@ RSpec.describe LeakingBucket do
     let(:bucket_size) { 5 }
 
     it 'handles a zero leak rate by permanently filling the bucket' do
-      5.times { get '/' }
+      5.times { get '/', { redis_key: } }
 
-      get '/'
+      get '/', { redis_key: }
       expect(last_response.status).to eq(429) # Bucket should be full and not leak
     end
   end

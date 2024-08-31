@@ -8,19 +8,19 @@ require 'redis'
 class LeakingBucket
   attr_reader :app, :bucket_size, :leak_rate, :redis, :redis_key
 
-  def initialize(app, bucket_size:, leak_rate:, redis_key:)
+  def initialize(app, bucket_size:, leak_rate:) # , redis_key:)
     @app = app
     @bucket_size = bucket_size
     @leak_rate = leak_rate # Leakings added per second
-    @redis_key = redis_key
+    # @redis_key = redis_key
     @redis = Redis.new(host: ENV.fetch('REDIS_HOST', 'localhost'), port: ENV.fetch('REDIS_PORT', 6380))
-
-    initialize_bucket
   end
 
   def call(env)
     request = Rack::Request.new(env)
-    @redis_key = request.params['redis_key'] || 'default_rate_limit'
+    @redis_key = request.params['redis_key'] # || 'default_rate_limit'
+
+    initialize_bucket unless bucket_initialized?
 
     if allow_request?
       @app.call(env)
@@ -31,13 +31,8 @@ class LeakingBucket
 
   def allow_request?
     current_count = redis.get("#{redis_key}:request_count").to_i
-    # puts "CC: #{current_count}"
-
     elapsed_time = current_time - redis.get("#{redis_key}:timestamp").to_f
     leaked_count = (elapsed_time * leak_rate).floor
-
-    # puts "CT: #{current_time}, ET: #{elapsed_time}, LC: #{leaked_count}, CC: #{current_count}, RC: #{redis.get("#{redis_key}:request_count")}"
-
     adjusted_count = [current_count - leaked_count, 0].max
 
     if adjusted_count < bucket_size
@@ -50,6 +45,10 @@ class LeakingBucket
   end
 
   private
+
+  def bucket_initialized?
+    redis.exists("#{@redis_key}:request_count") && redis.exists("#{@redis_key}:timestamp")
+  end
 
   def initialize_bucket
     # Start with an empty bucket if not already set
