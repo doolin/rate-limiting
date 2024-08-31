@@ -84,16 +84,18 @@ RSpec.describe LeakingBucket do
       client1_key = 'client1'
       client2_key = 'client2'
 
-      Rack::Builder.new do
-        use LeakingBucket, bucket_size: 10, leak_rate: 2, redis_key: client1_key
-        run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
-      end.to_app
+      # Rack::Builder.new do
+      #   use LeakingBucket, bucket_size: 10, leak_rate: 2, redis_key: client1_key
+      #   run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
+      # end.to_app
 
-      10.times { get '/', {}, 'HTTP_CLIENT_ID' => client1_key }
-      get '/', {}, 'HTTP_CLIENT_ID' => client1_key
+      key = client1_key
+      10.times { get '/', { redis_key: client1_key }, 'HTTP_CLIENT_ID' => client1_key }
+      get '/', { redis_key: client1_key }, 'HTTP_CLIENT_ID' => client1_key
       expect(last_response.status).to eq(429) # Client 1 should be rate-limited
 
-      get '/', {}, 'HTTP_CLIENT_ID' => client2_key
+      key = client2_key
+      get '/', { redis_key: client2_key }, 'HTTP_CLIENT_ID' => client2_key
       expect(last_response.status).to eq(200) # Client 2 should not be rate-limited
     end
   end
@@ -103,12 +105,6 @@ RSpec.describe LeakingBucket do
     let(:bucket_size) { 1 }
 
     it 'handles a very small bucket size correctly' do
-      # key = redis_key
-      # small_bucket_app = Rack::Builder.new do
-      #   use LeakingBucket, bucket_size: 1, leak_rate: 2, redis_key: key
-      #   run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
-      # end.to_app
-
       get '/'
       expect(last_response.status).to eq(200) # First request should be allowed
 
@@ -122,13 +118,8 @@ RSpec.describe LeakingBucket do
     let(:bucket_size) { 5 }
 
     it 'handles a zero leak rate by permanently filling the bucket' do
-      # key = redis_key
-      # no_leak_app = Rack::Builder.new do
-      #   use LeakingBucket, bucket_size: 5, leak_rate: 0, redis_key: key
-      #   run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
-      # end.to_app
-
       5.times { get '/' }
+
       get '/'
       expect(last_response.status).to eq(429) # Bucket should be full and not leak
     end

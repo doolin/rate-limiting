@@ -19,6 +19,9 @@ class LeakingBucket
   end
 
   def call(env)
+    request = Rack::Request.new(env)
+    @redis_key = request.params['redis_key'] || 'default_rate_limit'
+
     if allow_request?
       @app.call(env)
     else
@@ -28,12 +31,12 @@ class LeakingBucket
 
   def allow_request?
     current_count = redis.get("#{redis_key}:request_count").to_i
-    puts "CC: #{current_count}"
+    # puts "CC: #{current_count}"
 
     elapsed_time = current_time - redis.get("#{redis_key}:timestamp").to_f
     leaked_count = (elapsed_time * leak_rate).floor
 
-    puts "CT: #{current_time}, ET: #{elapsed_time}, LC: #{leaked_count}, CC: #{current_count}, RC: #{redis.get("#{redis_key}:request_count")}"
+    # puts "CT: #{current_time}, ET: #{elapsed_time}, LC: #{leaked_count}, CC: #{current_count}, RC: #{redis.get("#{redis_key}:request_count")}"
 
     adjusted_count = [current_count - leaked_count, 0].max
 
