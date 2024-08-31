@@ -2,7 +2,6 @@
 
 require 'rack'
 require 'json'
-require 'base64'
 require 'redis'
 
 require_relative 'token_bucket'
