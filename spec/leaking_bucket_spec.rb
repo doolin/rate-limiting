@@ -46,22 +46,22 @@ RSpec.describe LeakingBucket do
     end
 
     it 'rejects requests when the bucket is full' do
-      10.times { get '/' }
-      get '/'
-      get '/'
+      10.times { get '/', { redis_key: } }
+      get '/', { redis_key: }
+
       expect(last_response.status).to eq(429) # Assuming 429 Too Many Requests for rate limiting
     end
 
     it 'allows new requests after some time has passed and the bucket leaks' do
-      10.times { get '/' }
-      sleep(5) # Assuming a leaking rate of 2 requests per second
-      get '/'
+      10.times { get '/', { redis_key: } }
+      sleep(3) # Assuming a leaking rate of 2 requests per second
+      get '/', { redis_key: }
       expect(last_response.status).to eq(200)
     end
 
     it 'handles a burst of requests correctly' do
       15.times do |i|
-        get '/'
+        get '/', { redis_key: }
         if i < 10
           expect(last_response.status).to eq(200)
         else
@@ -75,7 +75,7 @@ RSpec.describe LeakingBucket do
       get '/'
       expect(last_response.status).to eq(429) # Bucket should be full here
 
-      sleep(5) # Enough time for the bucket to leak
+      sleep(3) # Enough time for the bucket to leak
       get '/'
       expect(last_response.status).to eq(200) # Bucket should have capacity now
     end
