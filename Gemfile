@@ -17,3 +17,7 @@ gem 'rubocop-rails'
 gem 'rubocop-rspec'
 gem 'thin'
 gem 'yard'
+
+# Audits the locked gems against the Ruby Advisory Database:
+#   bundle exec bundle-audit check --update
+gem 'bundler-audit', require: false, groups: %i[development test]
